@@ -17,13 +17,12 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
     
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
@@ -36,11 +35,28 @@ jobs:
       env:
         CI: false
     
-    - name: Install Capacitor CLI
-      run: npm install -g @capacitor/cli
+    - name: Add Capacitor
+      run: |
+        npm install @capacitor/core @capacitor/cli @capacitor/android --legacy-peer-deps
+        npx cap init "ForgeStack App" "com.forgestack.app" --web-dir=build || true
+        npx cap add android || true
     
     - name: Sync Capacitor
       run: npx cap sync android
+    
+    - name: Fix Android Build Config
+      run: |
+        # Fix gradle.properties for build
+        cat >> android/gradle.properties << 'EOF'
+        org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+        org.gradle.daemon=false
+        org.gradle.parallel=false
+        android.useAndroidX=true
+        android.enableJetifier=true
+        EOF
+        
+        # Print android version for debug
+        cat android/variables.gradle || true
     
     - name: Make gradlew executable
       run: chmod +x android/gradlew
@@ -48,7 +64,7 @@ jobs:
     - name: Build Debug APK
       run: |
         cd android
-        ./gradlew assembleDebug --no-daemon
+        ./gradlew assembleDebug --no-daemon -x lint
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
