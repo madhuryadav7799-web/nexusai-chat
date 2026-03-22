@@ -55,6 +55,22 @@ jobs:
         android.enableJetifier=true
         EOF
         
+        # Fix Kotlin duplicate classes: kotlin-stdlib 1.8+ includes jdk7/jdk8 classes,
+        # so force all Kotlin stdlib variants to the same version to avoid duplicates.
+        KOTLIN_VERSION="1.8.22"
+        cat >> android/build.gradle << EOF
+
+subprojects {
+    configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:${KOTLIN_VERSION}"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${KOTLIN_VERSION}"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${KOTLIN_VERSION}"
+        }
+    }
+}
+EOF
+        
         # Print android version for debug
         cat android/variables.gradle || true
     
