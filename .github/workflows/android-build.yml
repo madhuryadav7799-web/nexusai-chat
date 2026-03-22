@@ -54,7 +54,23 @@ jobs:
         android.useAndroidX=true
         android.enableJetifier=true
         EOF
-        
+
+        # Force a single Kotlin stdlib version across all modules to prevent
+        # duplicate class errors between kotlin-stdlib:1.8.22 and
+        # kotlin-stdlib-jdk7/jdk8:1.6.x (from older transitive dependencies).
+        cat >> android/build.gradle << 'EOF'
+
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
+        }
+    }
+}
+EOF
+
         # Print android version for debug
         cat android/variables.gradle || true
     
